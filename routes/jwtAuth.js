@@ -34,11 +34,31 @@ router.post("/register", async (req, res) => {
 
       //5. generate jwt token
 
+      //Grabs the id from the new user and generates a JWT token
       const token = jwtGenerator(newUser.rows[0].id);
       console.log("Token: ", token);
       res.json({ token });
-
     }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Server Error");
+  }
+});
+
+//Login Route
+router.post("/login", async (req, res) => {
+  try {
+    //1. Destructure the req.body
+
+    const { username, password } = req.body;
+
+    //2. Check if user doesn't exist -> throw error if not
+
+    const user = await pool.query(`SELECT * FROM users WHERE username = '${username}';`)
+
+    //3. Check if incoming password is the same as the db password
+
+    //4. Give them JWT Token
   } catch (error) {
     console.error(error.message);
     res.status(500).send("Server Error");
