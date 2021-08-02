@@ -2,9 +2,11 @@ const router = require("express").Router();
 const pool = require("../conn");
 const bcrypt = require("bcrypt");
 const jwtGenerator = require("../models/jwtGenerator");
+const validInfo = require("../middleware/validInfo");
+const authorization = require('../middleware/authorization');
 
 //registering
-router.post("/register", async (req, res) => {
+router.post("/register", validInfo, async (req, res) => {
   try {
     //1. destructure the req.body (name, email, password, username)
     const { fullname, email, username, password } = req.body;
@@ -46,7 +48,7 @@ router.post("/register", async (req, res) => {
 });
 
 //Login Route
-router.post("/login", async (req, res) => {
+router.post("/login", validInfo, async (req, res) => {
   try {
     //1. Destructure the req.body
 
@@ -54,15 +56,41 @@ router.post("/login", async (req, res) => {
 
     //2. Check if user doesn't exist -> throw error if not
 
-    const user = await pool.query(`SELECT * FROM users WHERE username = '${username}';`)
+    const user = await pool.query(
+      `SELECT * FROM users WHERE username = '${username}';`
+    );
+
+    if (user.rows.length === 0) {
+      return res.status(401).json("Password or username is incorrect");
+    }
 
     //3. Check if incoming password is the same as the db password
+    //need to use bcrypt again so we can make a comparison with the password it generated.
+    const validPassword = await bcrypt.compare(password, user.rows[0].password);
+
+    if (!validPassword) {
+      return res.status(401).json("Password or username is incorrect");
+    }
 
     //4. Give them JWT Token
+    const token = jwtGenerator(user.rows[0].id);
+    res.json({ token });
+
   } catch (error) {
+
     console.error(error.message);
     res.status(500).send("Server Error");
   }
 });
+
+router.get("/verify", authorization, (req, res) => {
+    try {
+      res.json(true);
+  
+    } catch (error) {
+      console.error(error.message);
+      res.status(500).send("Server Error");
+    }
+  });
 
 module.exports = router;
