@@ -60,8 +60,8 @@ router.post("/login", validInfo, async (req, res) => {
       `SELECT * FROM users WHERE username = '${username}';`
     );
 
-    if (user.rows.length === 0) {
-      return res.status(401).json("Password or username is incorrect");
+    if (user.rows.length > 0) {
+      return res.status(401).json("User already Exists");
     }
 
     //3. Check if incoming password is the same as the db password
